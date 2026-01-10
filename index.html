@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Network | Seameed Update</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        primary: '#6366f1', // Indigo 500
+                        primaryDark: '#4f46e5',
+                        dark: '#0f172a',    // Slate 900
+                        card: '#1e293b',    // Slate 800
+                        input: '#334155',    // Slate 700
+                        danger: '#ef4444'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+        
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        
+        .fade-in { animation: fadeIn 0.3s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .slide-down { animation: slideDown 0.3s ease-out forwards; }
+        @keyframes slideDown { from { transform: translateY(-100%); } to { transform: translateY(0); } }
+    </style>
+</head>
+<body class="bg-dark text-slate-200 font-sans h-screen overflow-hidden selection:bg-primary selection:text-white">
+
+    <div id="auth-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-dark bg-[url('https://grainy-gradients.vercel.app/noise.svg')]">
+        <div class="glass-panel p-8 rounded-2xl shadow-2xl w-full max-w-md relative overflow-hidden fade-in border border-slate-700">
+            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-purple-500"></div>
+            
+            <div class="text-center mb-8">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/20 text-primary mb-4">
+                    <i class="ph-fill ph-planet text-4xl"></i>
+                </div>
+                <h1 class="text-3xl font-bold text-white tracking-tight">The Network</h1>
+                <p class="text-slate-400 text-sm mt-2">Secure. Private. Admin Controlled.</p>
+            </div>
+
+            <div id="login-form" class="space-y-4">
+                <input type="text" id="l-user" class="w-full bg-input border-none rounded-lg p-3 text-white focus:ring-2 focus:ring-primary placeholder-slate-400" placeholder="Username">
+                <input type="password" id="l-pass" class="w-full bg-input border-none rounded-lg p-3 text-white focus:ring-2 focus:ring-primary placeholder-slate-400" placeholder="Password">
+                <button onclick="Auth.login()" class="w-full bg-primary hover:bg-primaryDark text-white font-bold py-3 rounded-lg transition shadow-lg shadow-primary/25">Log In</button>
+                <div class="text-center text-sm text-slate-500 mt-4">
+                    New here? <span class="text-primary cursor-pointer hover:underline" onclick="UI.toggleAuth('signup')">Create Account</span>
+                </div>
+            </div>
+
+            <div id="signup-form" class="hidden space-y-4">
+                <input type="text" id="s-user" class="w-full bg-input border-none rounded-lg p-3 text-white focus:ring-2 focus:ring-primary placeholder-slate-400" placeholder="Choose Username">
+                <input type="password" id="s-pass" class="w-full bg-input border-none rounded-lg p-3 text-white focus:ring-2 focus:ring-primary placeholder-slate-400" placeholder="Create Password">
+                <button onclick="Auth.signup()" class="w-full bg-primary hover:bg-primaryDark text-white font-bold py-3 rounded-lg transition shadow-lg shadow-primary/25">Sign Up</button>
+                <div class="text-center text-sm text-slate-500 mt-4">
+                    <span class="text-primary cursor-pointer hover:underline" onclick="UI.toggleAuth('login')">Back to Login</span>
+                </div>
+            </div>
+            <div id="auth-error" class="hidden mt-4 p-3 bg-red-500/20 text-red-400 text-sm rounded text-center border border-red-500/30"></div>
+        </div>
+    </div>
+
+    <div id="app" class="hidden h-screen grid grid-cols-[280px_1fr_300px] divide-x divide-slate-800">
+        
+        <nav class="bg-slate-900/50 flex flex-col p-4 overflow-y-auto">
+            <div class="flex items-center gap-3 px-2 mb-8">
+                <i class="ph-fill ph-planet text-3xl text-primary"></i>
+                <span class="font-bold text-xl text-white">The Network</span>
+            </div>
+
+            <div class="space-y-1">
+                <button onclick="UI.switchView('feed')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-slate-400 rounded-xl hover:bg-slate-800 hover:text-white transition bg-slate-800 text-white">
+                    <i class="ph ph-house text-xl"></i> <span class="font-medium">Home Feed</span>
+                </button>
+                
+                <button onclick="UI.switchView('seameed')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-slate-400 rounded-xl hover:bg-slate-800 hover:text-white transition">
+                    <i class="ph ph-film-strip text-xl text-pink-500"></i> <span class="font-medium">Seameed</span>
+                </button>
+
+                <button onclick="UI.toggleSearch(true)" class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-slate-400 rounded-xl hover:bg-slate-800 hover:text-white transition">
+                    <i class="ph ph-magnifying-glass text-xl"></i> <span class="font-medium">Search / Groups</span>
+                </button>
+                <button onclick="UI.switchView('messages')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-slate-400 rounded-xl hover:bg-slate-800 hover:text-white transition">
+                    <i class="ph ph-chats text-xl"></i> <span class="font-medium">Messages</span>
+                </button>
+            </div>
+
+            <button id="admin-btn" onclick="UI.switchView('admin')" class="hidden mt-4 w-full flex items-center gap-3 px-4 py-3 text-red-400 bg-red-900/10 border border-red-900/30 rounded-xl hover:bg-red-900/30 transition">
+                <i class="ph-fill ph-shield-warning text-xl"></i> <span class="font-bold">ADMIN PANEL</span>
+            </button>
+
+            <div class="mt-8">
+                <div class="flex items-center justify-between px-2 mb-3">
+                    <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Your Groups</h3>
+                    <button onclick="UI.toggleSearch(true)" class="text-slate-500 hover:text-primary"><i class="ph-bold ph-plus"></i></button>
+                </div>
+                <div id="my-groups-list" class="space-y-1"></div>
+            </div>
+
+            <div class="mt-auto pt-4 border-t border-slate-800">
+                <div class="flex items-center gap-3 px-2">
+                    <div id="current-user-avatar" class="w-10 h-10 rounded-full bg-gradient-to-tr from-primary to-purple-500 flex items-center justify-center font-bold text-white shadow-lg cursor-pointer" onclick="UI.openUserProfile(Auth.currentUser.username)">?</div>
+                    <div class="flex-1 min-w-0">
+                        <h4 id="current-user-name" class="font-bold text-sm text-white truncate">User</h4>
+                        <p class="text-xs text-slate-500 truncate">Online</p>
+                    </div>
+                    <button onclick="Auth.logout()" class="text-slate-400 hover:text-white"><i class="ph-bold ph-sign-out text-xl"></i></button>
+                </div>
+            </div>
+        </nav>
+
+        <main class="relative bg-dark flex flex-col overflow-hidden">
+            
+            <header class="h-16 border-b border-slate-800 flex items-center justify-between px-6 bg-dark/80 backdrop-blur z-10">
+                <h2 id="page-title" class="font-bold text-lg text-white">Home Feed</h2>
+                <div class="flex gap-2">
+                    <span class="text-xs font-mono text-emerald-500 bg-emerald-900/20 px-2 py-1 rounded border border-emerald-900/30">SECURE_CONN: ON</span>
+                </div>
+            </header>
+
+            <div id="view-feed" class="view-section flex-1 overflow-y-auto p-6 scroll-smooth">
+                <div class="glass-panel p-4 rounded-xl mb-6">
+                    <textarea id="post-content" rows="2" class="w-full bg-transparent border-none text-white placeholder-slate-500 focus:ring-0 resize-none text-lg" placeholder="What's happening?"></textarea>
+                    <div id="media-input-container" class="hidden mt-2 mb-2">
+                        <input type="text" id="post-media-url" class="w-full bg-slate-900/50 border border-slate-700 rounded p-2 text-xs text-white" placeholder="Paste Image/Video URL here...">
+                    </div>
+                    <div class="flex justify-between items-center mt-3 pt-3 border-t border-slate-700">
+                        <div class="flex gap-2 text-primary">
+                            <button onclick="document.getElementById('media-input-container').classList.toggle('hidden')" class="p-2 hover:bg-slate-800 rounded-full transition" title="Add Image URL"><i class="ph ph-image"></i></button>
+                        </div>
+                        <button onclick="App.createPost()" class="bg-primary hover:bg-primaryDark text-white px-6 py-2 rounded-full font-bold text-sm transition shadow-lg">Post</button>
+                    </div>
+                </div>
+                <div id="feed-stream" class="space-y-4 pb-20"></div>
+            </div>
+
+            <div id="view-seameed" class="view-section hidden flex-1 overflow-y-auto p-6 scroll-smooth bg-black">
+                <div class="max-w-md mx-auto">
+                    <div class="glass-panel p-4 rounded-xl mb-8 border border-pink-900/30">
+                        <h3 class="font-bold text-pink-400 mb-2 flex items-center gap-2"><i class="ph-fill ph-video-camera"></i> Create Seameed</h3>
+                        <p class="text-xs text-slate-400 mb-2">Short form videos under 3 minutes. Paste YouTube Link.</p>
+                        <div class="flex gap-2">
+                            <input type="text" id="seameed-url" class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 text-sm text-white" placeholder="YouTube URL (Shorts/Watch)">
+                            <button onclick="App.postSeameed()" class="bg-pink-600 hover:bg-pink-700 text-white font-bold px-4 py-2 rounded-lg text-sm">Post</button>
+                        </div>
+                    </div>
+
+                    <div id="seameed-stream" class="space-y-12 pb-20">
+                        </div>
+                </div>
+            </div>
+
+            <div id="view-profile" class="view-section hidden flex-1 overflow-y-auto bg-dark">
+                <div class="h-48 bg-gradient-to-r from-slate-800 to-indigo-900 relative">
+                    <button onclick="UI.switchView('feed')" class="absolute top-4 left-4 bg-black/50 p-2 rounded-full hover:bg-white/20 text-white"><i class="ph-bold ph-arrow-left"></i> Back</button>
+                </div>
+                <div class="px-6 relative">
+                    <div class="flex justify-between items-end -mt-12 mb-6">
+                        <div class="relative">
+                            <div id="u-prof-avatar" class="w-24 h-24 rounded-full bg-slate-700 border-4 border-dark flex items-center justify-center text-4xl font-bold text-white shadow-xl">?</div>
+                        </div>
+                        <div id="u-prof-action">
+                            </div>
+                    </div>
+                    
+                    <h1 id="u-prof-name" class="text-2xl font-bold text-white">Username</h1>
+                    <p class="text-slate-500 text-sm mb-6">User ID: <span id="u-prof-id" class="font-mono">---</span></p>
+
+                    <div class="flex gap-8 border-b border-slate-800 mb-6">
+                        <button onclick="UI.switchProfileTab('posts')" id="tab-posts" class="pb-3 text-white font-bold border-b-2 border-primary transition">Posts</button>
+                        <button onclick="UI.switchProfileTab('seameed')" id="tab-seameed" class="pb-3 text-slate-500 font-bold border-b-2 border-transparent hover:text-white transition">Seameed</button>
+                    </div>
+
+                    <div id="u-prof-content-posts" class="space-y-4 pb-10">
+                        </div>
+                    <div id="u-prof-content-seameed" class="space-y-4 pb-10 hidden">
+                        </div>
+                </div>
+            </div>
+
+            <div id="view-group" class="view-section hidden flex-1 flex h-full">
+                <div class="w-48 bg-slate-900/30 border-r border-slate-800 flex flex-col">
+                    <div class="p-4 border-b border-slate-800">
+                        <h3 id="group-name-header" class="font-bold text-white truncate">Group Name</h3>
+                    </div>
+                    <div class="p-2 space-y-1 flex-1 overflow-y-auto" id="group-channels"></div>
+                    <div id="group-owner-controls" class="p-2 border-t border-slate-800 hidden">
+                        <button onclick="Group.createChannel()" class="w-full text-left px-2 py-1 text-xs text-primary hover:underline">+ Add Channel</button>
+                        <button onclick="Group.disband()" class="w-full text-left px-2 py-1 text-xs text-red-400 hover:underline">Disband Group</button>
+                    </div>
+                </div>
+                <div class="flex-1 flex flex-col bg-slate-900/20">
+                    <div class="h-12 border-b border-slate-800 flex items-center px-4">
+                        <span class="text-slate-400 mr-2">#</span>
+                        <span id="current-channel-name" class="font-bold text-white">general</span>
+                    </div>
+                    <div id="group-chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
+                    <div class="p-4 bg-slate-900/40">
+                        <div class="flex gap-2 bg-slate-800 p-2 rounded-lg">
+                            <input type="text" id="group-chat-input" class="flex-1 bg-transparent border-none text-white focus:ring-0" placeholder="Message #channel">
+                            <button onclick="Group.sendMessage()" class="text-primary hover:text-white"><i class="ph-fill ph-paper-plane-right text-xl"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-admin" class="view-section hidden flex-1 overflow-y-auto p-6 bg-red-950/10">
+                <h2 class="text-2xl font-bold text-red-400 mb-6 flex items-center gap-2"><i class="ph-fill ph-shield-warning"></i> ADMIN COMMAND CENTER</h2>
+                <div class="grid grid-cols-2 gap-6 mb-8">
+                    <div class="glass-panel p-6 rounded-xl border-red-900/30">
+                        <h3 class="font-bold text-white mb-4">Content Control</h3>
+                        <button onclick="Admin.wipeMedia()" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-lg mb-3 shadow-lg shadow-red-900/20">
+                            <i class="ph-bold ph-trash"></i> WIPE ALL MEDIA
+                        </button>
+                        <p class="text-xs text-slate-400">Irreversibly deletes all posts and images.</p>
+                    </div>
+                    <div class="glass-panel p-6 rounded-xl border-red-900/30">
+                        <h3 class="font-bold text-white mb-4">User Oversight</h3>
+                        <div class="flex gap-2">
+                            <input type="text" id="admin-ban-target" class="bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm w-full text-white" placeholder="Username">
+                            <button onclick="Admin.banUser()" class="bg-red-500/20 text-red-400 border border-red-500/50 px-4 rounded hover:bg-red-500 hover:text-white transition">BAN</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="view-messages" class="view-section hidden flex-1 flex flex-col p-6">
+                 <h2 class="text-xl font-bold text-white mb-4">Private Messages</h2>
+                 <div id="dm-list" class="space-y-2">
+                    <div class="text-slate-500 text-sm">No recent messages. Use search to find people!</div>
+                 </div>
+            </div>
+
+            <div id="search-panel" class="absolute top-0 left-0 w-full h-full bg-slate-900/95 backdrop-blur-xl z-20 transform -translate-y-full transition-transform duration-300 flex flex-col">
+                <div class="p-6 border-b border-slate-800 flex justify-between items-center">
+                    <h2 class="text-2xl font-bold text-white">Discovery</h2>
+                    <button onclick="UI.toggleSearch(false)" class="p-2 bg-slate-800 rounded-full hover:bg-slate-700 text-white"><i class="ph-bold ph-x"></i></button>
+                </div>
+                <div class="p-6 flex-1 overflow-y-auto space-y-8">
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-500 uppercase mb-3">Find Users</h3>
+                        <div class="relative">
+                            <input type="text" id="user-search-input" oninput="App.searchUsers(this.value)" class="w-full bg-slate-800 border-none rounded-xl p-4 pl-12 text-white text-lg focus:ring-2 focus:ring-primary" placeholder="Search by username...">
+                            <i class="ph-bold ph-magnifying-glass absolute left-4 top-4 text-slate-500 text-xl"></i>
+                        </div>
+                        <div id="user-search-results" class="mt-4 grid grid-cols-1 gap-2"></div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-end mb-3">
+                            <h3 class="text-sm font-bold text-slate-500 uppercase">Public Groups</h3>
+                            <button onclick="Group.createModal()" class="text-primary text-sm font-bold hover:underline">+ Create Group</button>
+                        </div>
+                        <div class="flex gap-4 overflow-x-auto pb-4 snap-x" id="public-groups-slider"></div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+        <aside class="bg-slate-900/30 p-6 flex flex-col gap-6 border-l border-slate-800">
+            <div class="glass-panel p-6 rounded-2xl text-center">
+                <div class="relative inline-block cursor-pointer" onclick="UI.openUserProfile(Auth.currentUser.username)">
+                    <div id="profile-avatar-lg" class="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center text-3xl font-bold text-white shadow-xl mb-4 border-4 border-card">?</div>
+                    <div class="absolute bottom-4 right-0 w-5 h-5 bg-green-500 border-4 border-card rounded-full"></div>
+                </div>
+                <h2 id="profile-name" class="text-xl font-bold text-white hover:text-primary cursor-pointer" onclick="UI.openUserProfile(Auth.currentUser.username)">User</h2>
+                <div class="flex justify-center gap-6 mt-4 pb-4 border-b border-slate-700/50">
+                    <div class="text-center">
+                        <span id="stat-posts" class="block text-white font-bold text-lg">0</span>
+                        <span class="text-xs text-slate-500 uppercase font-semibold">Posts</span>
+                    </div>
+                    <div class="text-center">
+                        <span id="stat-followers" class="block text-white font-bold text-lg">0</span>
+                        <span class="text-xs text-slate-500 uppercase font-semibold">Followers</span>
+                    </div>
+                </div>
+                <div class="mt-4 text-xs text-slate-500">
+                    ID: <span id="profile-id" class="font-mono">---</span>
+                </div>
+            </div>
+
+            <div class="glass-panel p-4 rounded-xl">
+                <h3 class="font-bold text-slate-300 text-sm mb-2 flex items-center gap-2"><i class="ph-fill ph-lock-key text-primary"></i> Encrypted Vault</h3>
+                <div class="bg-black/40 rounded p-3">
+                    <p class="text-xs text-slate-400 font-mono">STATUS: <span class="text-emerald-500">SECURE</span></p>
+                    <p class="text-xs text-slate-400 font-mono mt-1">SESSION: <span class="text-blue-400">ACTIVE</span></p>
+                </div>
+            </div>
+            
+            <div class="mt-auto">
+                <div class="glass-panel p-4 rounded-xl bg-gradient-to-br from-indigo-900/20 to-purple-900/20 border-none">
+                    <h4 class="font-bold text-indigo-300 text-sm mb-1"><i class="ph-fill ph-bird"></i> Did you know?</h4>
+                    <p class="text-xs text-indigo-200/70 italic">Clicking user circles now opens their full profile.</p>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <script>
+        // --- DATABASE MOCK (LOCAL STORAGE) ---
+        const DB = {
+            init: () => {
+                if(!localStorage.getItem('net_v3_users')) localStorage.setItem('net_v3_users', JSON.stringify([]));
+                if(!localStorage.getItem('net_v3_posts')) localStorage.setItem('net_v3_posts', JSON.stringify([]));
+                if(!localStorage.getItem('net_v3_groups')) localStorage.setItem('net_v3_groups', JSON.stringify([]));
+                if(!localStorage.getItem('net_v3_banned')) localStorage.setItem('net_v3_banned', JSON.stringify([]));
+                // New Seameed Database
+                if(!localStorage.getItem('net_v3_seameeds')) localStorage.setItem('net_v3_seameeds', JSON.stringify([]));
+            },
+            getUsers: () => JSON.parse(localStorage.getItem('net_v3_users')),
+            saveUsers: (d) => localStorage.setItem('net_v3_users', JSON.stringify(d)),
+            getPosts: () => JSON.parse(localStorage.getItem('net_v3_posts')),
+            savePosts: (d) => localStorage.setItem('net_v3_posts', JSON.stringify(d)),
+            getGroups: () => JSON.parse(localStorage.getItem('net_v3_groups')),
+            saveGroups: (d) => localStorage.setItem('net_v3_groups', JSON.stringify(d)),
+            getSeameeds: () => JSON.parse(localStorage.getItem('net_v3_seameeds')),
+            saveSeameeds: (d) => localStorage.setItem('net_v3_seameeds', JSON.stringify(d)),
+            getBanned: () => JSON.parse(localStorage.getItem('net_v3_banned')),
+            banUser: (u) => {
+                let b = DB.getBanned();
+                b.push(u);
+                localStorage.setItem('net_v3_banned', JSON.stringify(b));
+            },
+            wipeMedia: () => {
+                localStorage.setItem('net_v3_posts', JSON.stringify([]));
+                localStorage.setItem('net_v3_seameeds', JSON.stringify([]));
+            }
+        };
+
+        // --- AUTH SYSTEM ---
+        const Auth = {
+            currentUser: null,
+            login: () => {
+                const u = document.getElementById('l-user').value.trim();
+                const p = document.getElementById('l-pass').value.trim();
+                if(DB.getBanned().includes(u)) return UI.showAuthError("ACCOUNT PERMANENTLY BANNED");
+
+                if(u === 'admin' && p === 'ilovetoeatagiggidy') {
+                    // Admin handling
+                    let users = DB.getUsers();
+                    let adminUser = users.find(x => x.username === 'admin');
+                    if(!adminUser) {
+                        adminUser = { id: 'root_admin', username: 'admin', password: 'encrypted_admin', followers: 999999, following: [], likedPosts: [], joinedGroups: [], lastActive: Date.now() };
+                        users.push(adminUser);
+                        DB.saveUsers(users);
+                    }
+                    Auth.currentUser = adminUser;
+                    localStorage.setItem('net_v3_session', JSON.stringify(adminUser));
+                    UI.hideAuth();
+                    App.init();
+                    return;
+                }
+
+                const users = DB.getUsers();
+                const user = users.find(x => x.username === u && x.password === p);
+                if(user) {
+                    user.lastActive = Date.now();
+                    DB.saveUsers(users);
+                    Auth.currentUser = user;
+                    localStorage.setItem('net_v3_session', JSON.stringify(user));
+                    UI.hideAuth();
+                    App.init();
+                } else {
+                    UI.showAuthError("Invalid Credentials");
+                }
+            },
+            signup: () => {
+                const u = document.getElementById('s-user').value.trim();
+                const p = document.getElementById('s-pass').value.trim();
+                if(!u || !p) return UI.showAuthError("Fields cannot be empty");
+                if(u.toLowerCase() === 'admin') return UI.showAuthError("Reserved Username");
+                const users = DB.getUsers();
+                if(users.find(x => x.username === u)) return UI.showAuthError("Username taken");
+                const newUser = { id: 'u_' + Date.now(), username: u, password: p, followers: 0, following: [], likedPosts: [], joinedGroups: [], lastActive: Date.now() };
+                users.push(newUser);
+                DB.saveUsers(users);
+                Auth.currentUser = newUser;
+                localStorage.setItem('net_v3_session', JSON.stringify(newUser));
+                UI.hideAuth();
+                App.init();
+            },
+            logout: () => {
+                localStorage.removeItem('net_v3_session');
+                location.reload();
+            },
+            checkSession: () => {
+                const session = JSON.parse(localStorage.getItem('net_v3_session'));
+                if(session) {
+                    const freshUser = DB.getUsers().find(u => u.username === session.username);
+                    if(freshUser && !DB.getBanned().includes(freshUser.username)) {
+                        Auth.currentUser = freshUser;
+                        UI.hideAuth();
+                        App.init();
+                    } else {
+                        localStorage.removeItem('net_v3_session');
+                    }
+                }
+            }
+        };
+
+        // --- MAIN APP LOGIC ---
+        const App = {
+            init: () => {
+                UI.updateProfile();
+                UI.renderFeed();
+                UI.renderSeameeds();
+                Group.renderMyGroups();
+                Group.renderPublicSlider();
+                if(Auth.currentUser.username === 'admin') document.getElementById('admin-btn').classList.remove('hidden');
+                setInterval(() => {
+                    if(Auth.currentUser) {
+                        const users = DB.getUsers();
+                        const me = users.find(u => u.username === Auth.currentUser.username);
+                        if(me) { me.lastActive = Date.now(); DB.saveUsers(users); }
+                    }
+                }, 5000);
+            },
+
+            createPost: () => {
+                const txt = document.getElementById('post-content').value;
+                const media = document.getElementById('post-media-url').value;
+                if(!txt && !media) return;
+                const newPost = { id: 'p_' + Date.now(), author: Auth.currentUser.username, content: txt, media: media, likes: 0, timestamp: Date.now() };
+                const posts = DB.getPosts();
+                posts.unshift(newPost);
+                DB.savePosts(posts);
+                document.getElementById('post-content').value = '';
+                document.getElementById('post-media-url').value = '';
+                document.getElementById('media-input-container').classList.add('hidden');
+                UI.renderFeed();
+                UI.updateProfile();
+            },
+
+            // --- SEAMEED LOGIC ---
+            postSeameed: () => {
+                const url = document.getElementById('seameed-url').value;
+                // Parse YouTube ID
+                let videoId = '';
+                const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+                const match = url.match(regExp);
+                if (match && match[2].length == 11) { videoId = match[2]; }
+                else if (url.includes('shorts/')) { videoId = url.split('shorts/')[1].split('?')[0]; }
+
+                if(!videoId) return alert("Invalid YouTube URL");
+
+                const newVid = {
+                    id: 'sm_' + Date.now(),
+                    author: Auth.currentUser.username,
+                    ytId: videoId,
+                    timestamp: Date.now()
+                };
+
+                const vids = DB.getSeameeds();
+                vids.unshift(newVid);
+                DB.saveSeameeds(vids);
+                document.getElementById('seameed-url').value = '';
+                UI.renderSeameeds();
+            },
+
+            toggleLike: (postId, btn) => {
+                const users = DB.getUsers();
+                const posts = DB.getPosts();
+                const me = users.find(u => u.username === Auth.currentUser.username);
+                const post = posts.find(p => p.id === postId);
+                if(!me || !post) return;
+                if(me.likedPosts.includes(postId)) { return alert("Already liked."); }
+                post.likes++;
+                me.likedPosts.push(postId);
+                DB.saveUsers(users);
+                DB.savePosts(posts);
+                Auth.currentUser = me;
+                btn.innerHTML = `<i class="ph-fill ph-heart text-pink-500"></i> ${post.likes}`;
+                btn.classList.add('text-pink-500');
+            },
+
+            followUser: (targetUsername, btn) => {
+                if(targetUsername === Auth.currentUser.username) return;
+                const users = DB.getUsers();
+                const me = users.find(u => u.username === Auth.currentUser.username);
+                const target = users.find(u => u.username === targetUsername);
+                
+                if(me.following.includes(targetUsername)) return;
+                
+                me.following.push(targetUsername);
+                target.followers++;
+                DB.saveUsers(users);
+                Auth.currentUser = me;
+                
+                if(btn) {
+                    btn.innerText = "Following";
+                    btn.classList.add('bg-slate-700', 'text-slate-400');
+                    btn.classList.remove('bg-primary', 'text-white');
+                }
+                UI.updateProfile();
+            },
+
+            searchUsers: (query) => {
+                const res = document.getElementById('user-search-results');
+                res.innerHTML = '';
+                if(!query) return;
+                const users = DB.getUsers().filter(u => u.username.toLowerCase().includes(query.toLowerCase()));
+                users.forEach(u => {
+                    res.innerHTML += `
+                        <div class="flex items-center justify-between bg-slate-800 p-3 rounded-xl cursor-pointer" onclick="UI.openUserProfile('${u.username}')">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-full bg-slate-600 flex items-center justify-center font-bold text-white">${u.username[0]}</div>
+                                <span class="font-bold text-white">${u.username}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+        };
+
+        // --- GROUP LOGIC ---
+        const Group = {
+            currentGroup: null, currentChannel: null,
+            createModal: () => {
+                const name = prompt("Enter Group Name:");
+                const isPrivate = confirm("Make it Private? (Requires Code)");
+                if(!name) return;
+                const code = isPrivate ? Math.floor(100000 + Math.random() * 900000).toString() : null;
+                const newGroup = { id: 'g_' + Date.now(), name: name, owner: Auth.currentUser.username, isPrivate: isPrivate, code: code, members: [Auth.currentUser.username], channels: [{ name: 'general', messages: [] }, { name: 'announcements', messages: [] }] };
+                const groups = DB.getGroups(); groups.push(newGroup); DB.saveGroups(groups);
+                const users = DB.getUsers(); const me = users.find(u => u.username === Auth.currentUser.username); me.joinedGroups.push(newGroup.id); DB.saveUsers(users); Auth.currentUser = me;
+                Group.renderMyGroups(); Group.renderPublicSlider();
+                if(code) alert(`Group Created! Access Code: ${code}`);
+            },
+            join: (groupId) => {
+                const groups = DB.getGroups(); const group = groups.find(g => g.id === groupId);
+                if(group.members.includes(Auth.currentUser.username)) return alert("Already a member!");
+                group.members.push(Auth.currentUser.username); DB.saveGroups(groups);
+                const users = DB.getUsers(); const me = users.find(u => u.username === Auth.currentUser.username); me.joinedGroups.push(groupId); DB.saveUsers(users); Auth.currentUser = me;
+                alert(`Joined ${group.name}!`); Group.renderMyGroups();
+            },
+            open: (groupId) => {
+                const groups = DB.getGroups(); const group = groups.find(g => g.id === groupId);
+                Group.currentGroup = group; Group.currentChannel = group.channels[0];
+                document.getElementById('group-name-header').innerText = group.name;
+                document.getElementById('group-owner-controls').classList.toggle('hidden', group.owner !== Auth.currentUser.username);
+                Group.renderChannels(); Group.renderMessages(); UI.switchView('group');
+            },
+            renderChannels: () => {
+                const list = document.getElementById('group-channels'); list.innerHTML = '';
+                Group.currentGroup.channels.forEach((ch, idx) => {
+                    const active = Group.currentChannel.name === ch.name ? 'bg-slate-800 text-white' : 'text-slate-400 hover:bg-slate-800/50';
+                    list.innerHTML += `<div onclick="Group.switchChannel(${idx})" class="cursor-pointer px-3 py-2 rounded mb-1 flex items-center gap-2 ${active}"><i class="ph-bold ph-hash"></i> <span class="truncate">${ch.name}</span></div>`;
+                });
+            },
+            switchChannel: (idx) => { Group.currentChannel = Group.currentGroup.channels[idx]; Group.renderChannels(); Group.renderMessages(); },
+            createChannel: () => {
+                const name = prompt("Channel Name (no spaces):"); if(!name) return;
+                const groups = DB.getGroups(); const g = groups.find(x => x.id === Group.currentGroup.id);
+                g.channels.push({ name: name.replace(/\s/g, '-').toLowerCase(), messages: [] });
+                DB.saveGroups(groups); Group.currentGroup = g; Group.renderChannels();
+            },
+            disband: () => {
+                if(!confirm("Are you sure?")) return;
+                let groups = DB.getGroups(); groups = groups.filter(g => g.id !== Group.currentGroup.id); DB.saveGroups(groups);
+                alert("Group Disbanded."); UI.switchView('feed'); Group.renderMyGroups();
+            },
+            sendMessage: () => {
+                const inp = document.getElementById('group-chat-input'); const txt = inp.value.trim(); if(!txt) return;
+                const msg = { user: Auth.currentUser.username, text: txt, time: Date.now() };
+                const groups = DB.getGroups(); const g = groups.find(x => x.id === Group.currentGroup.id); const ch = g.channels.find(c => c.name === Group.currentChannel.name);
+                ch.messages.push(msg); DB.saveGroups(groups); Group.currentGroup = g; Group.currentChannel = ch; inp.value = ''; Group.renderMessages();
+            },
+            renderMessages: () => {
+                document.getElementById('current-channel-name').innerText = Group.currentChannel.name;
+                const container = document.getElementById('group-chat-messages'); container.innerHTML = '';
+                Group.currentChannel.messages.forEach(m => {
+                    const isMe = m.user === Auth.currentUser.username;
+                    container.innerHTML += `<div class="flex gap-3 mb-2 hover:bg-slate-800/30 p-2 rounded -mx-2"><div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center font-bold text-xs shrink-0 cursor-pointer" onclick="UI.openUserProfile('${m.user}')">${m.user[0]}</div><div class="min-w-0"><div class="flex items-baseline gap-2"><span class="font-bold text-sm ${isMe ? 'text-primary' : 'text-white'} cursor-pointer" onclick="UI.openUserProfile('${m.user}')">${m.user}</span><span class="text-[10px] text-slate-500">${new Date(m.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span></div><p class="text-slate-300 text-sm break-words">${m.text}</p></div></div>`;
+                });
+                container.scrollTop = container.scrollHeight;
+            },
+            renderMyGroups: () => {
+                const list = document.getElementById('my-groups-list'); list.innerHTML = '';
+                const allGroups = DB.getGroups(); const myGroups = allGroups.filter(g => g.members.includes(Auth.currentUser.username));
+                myGroups.forEach(g => { list.innerHTML += `<button onclick="Group.open('${g.id}')" class="w-full flex items-center gap-3 px-4 py-2 text-sm text-slate-400 rounded-lg hover:bg-slate-800 hover:text-white transition"><span class="w-2 h-2 rounded-full bg-slate-600"></span> ${g.name}</button>`; });
+            },
+            renderPublicSlider: () => {
+                const slider = document.getElementById('public-groups-slider'); slider.innerHTML = '';
+                const allGroups = DB.getGroups(); const publicGroups = allGroups.filter(g => !g.isPrivate);
+                publicGroups.forEach(g => { slider.innerHTML += `<div class="snap-start shrink-0 w-64 h-32 bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl p-4 border border-slate-700 flex flex-col justify-between hover:border-primary transition group cursor-pointer" onclick="Group.join('${g.id}')"><div><h4 class="font-bold text-white group-hover:text-primary transition">${g.name}</h4><p class="text-xs text-slate-500">${g.members.length} members</p></div><button class="self-end text-xs font-bold bg-slate-700 text-white px-3 py-1 rounded-full group-hover:bg-primary transition">Join Group</button></div>`; });
+            }
+        };
+
+        // --- ADMIN SYSTEM ---
+        const Admin = {
+            wipeMedia: () => {
+                if(!confirm("WARNING: Global Delete. Proceed?")) return;
+                DB.wipeMedia(); alert("Database purged."); UI.renderFeed(); UI.renderSeameeds();
+            },
+            banUser: () => {
+                const target = document.getElementById('admin-ban-target').value;
+                if(!target || target === 'admin') return;
+                DB.banUser(target); alert(`Banned ${target}.`);
+                let posts = DB.getPosts().filter(p => p.author !== target); DB.savePosts(posts);
+                let vids = DB.getSeameeds().filter(v => v.author !== target); DB.saveSeameeds(vids);
+                UI.renderFeed(); UI.renderSeameeds();
+            },
+            deletePost: (id) => { if(confirm("Delete post?")) { let posts = DB.getPosts().filter(p => p.id !== id); DB.savePosts(posts); UI.renderFeed(); } }
+        };
+
+        // --- UI MANAGER ---
+        const UI = {
+            currentProfileUser: null,
+            showAuthError: (msg) => { const el = document.getElementById('auth-error'); el.innerText = msg; el.classList.remove('hidden'); },
+            hideAuth: () => { document.getElementById('auth-screen').classList.add('hidden'); document.getElementById('app').classList.remove('hidden'); document.getElementById('app').classList.add('grid'); },
+            toggleAuth: (mode) => { document.getElementById('auth-error').classList.add('hidden'); document.getElementById(mode === 'signup' ? 'login-form' : 'signup-form').classList.add('hidden'); document.getElementById(mode === 'signup' ? 'signup-form' : 'login-form').classList.remove('hidden'); },
+            
+            updateProfile: () => {
+                const u = Auth.currentUser; const freshUser = DB.getUsers().find(x => x.username === u.username);
+                const posts = DB.getPosts().filter(p => p.author === u.username);
+                document.getElementById('profile-name').innerText = freshUser.username;
+                document.getElementById('profile-id').innerText = freshUser.id;
+                document.getElementById('profile-avatar-lg').innerText = freshUser.username[0].toUpperCase();
+                document.getElementById('current-user-avatar').innerText = freshUser.username[0].toUpperCase();
+                document.getElementById('current-user-name').innerText = freshUser.username;
+                document.getElementById('stat-followers').innerText = freshUser.followers;
+                document.getElementById('stat-posts').innerText = posts.length;
+            },
+
+            renderFeed: () => {
+                const container = document.getElementById('feed-stream'); container.innerHTML = '';
+                const posts = DB.getPosts();
+                if(posts.length === 0) return container.innerHTML = `<div class="text-center text-slate-500 mt-10">No posts yet.</div>`;
+                posts.forEach(post => {
+                    let mediaHtml = post.media ? `<img src="${post.media}" class="w-full rounded-lg mt-3 border border-slate-700" onerror="this.style.display='none'">` : '';
+                    const deleteBtn = Auth.currentUser.username === 'admin' ? `<button onclick="Admin.deletePost('${post.id}')" class="text-red-500 text-xs ml-2">DEL</button>` : '';
+                    container.innerHTML += `
+                        <div class="glass-panel p-4 rounded-xl fade-in">
+                            <div class="flex gap-3">
+                                <div onclick="UI.openUserProfile('${post.author}')" class="cursor-pointer w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center font-bold text-white shrink-0 hover:ring-2 hover:ring-primary transition">${post.author[0].toUpperCase()}</div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex justify-between items-start">
+                                        <div><span onclick="UI.openUserProfile('${post.author}')" class="font-bold text-white cursor-pointer hover:underline">@${post.author}</span><span class="text-xs text-slate-500 ml-2">${new Date(post.timestamp).toLocaleTimeString()}</span>${deleteBtn}</div>
+                                    </div>
+                                    <p class="text-slate-200 mt-1 leading-relaxed break-words">${post.content}</p>
+                                    ${mediaHtml}
+                                    <div class="flex gap-6 mt-3 text-slate-400 text-sm">
+                                        <button class="flex items-center gap-1 hover:text-pink-500 transition" onclick="App.toggleLike('${post.id}', this)"><i class="ph-bold ph-heart ${Auth.currentUser.likedPosts.includes(post.id) ? 'text-pink-500' : ''}"></i> ${Auth.currentUser.likedPosts.includes(post.id) ? post.likes : (post.likes || 0)}</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            },
+
+            // --- SEAMEED RENDER ---
+            renderSeameeds: () => {
+                const container = document.getElementById('seameed-stream'); container.innerHTML = '';
+                const vids = DB.getSeameeds();
+                if(vids.length === 0) return container.innerHTML = `<div class="text-center text-slate-500">No Seameeds yet. Paste a link above!</div>`;
+                
+                vids.forEach(v => {
+                    container.innerHTML += `
+                        <div class="bg-slate-900 rounded-2xl overflow-hidden border border-slate-800 shadow-2xl max-w-sm mx-auto">
+                            <div class="p-4 flex items-center gap-3">
+                                <div onclick="UI.openUserProfile('${v.author}')" class="cursor-pointer w-8 h-8 rounded-full bg-pink-600 flex items-center justify-center font-bold text-white">${v.author[0].toUpperCase()}</div>
+                                <span onclick="UI.openUserProfile('${v.author}')" class="font-bold text-white cursor-pointer hover:underline">@${v.author}</span>
+                            </div>
+                            <div class="aspect-[9/16] w-full bg-black">
+                                <iframe width="100%" height="100%" src="https://www.youtube.com/embed/${v.ytId}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                            </div>
+                            <div class="p-4 flex gap-4 text-2xl">
+                                <button class="text-white hover:text-pink-500"><i class="ph-fill ph-heart"></i></button>
+                                <button class="text-white hover:text-blue-500"><i class="ph-fill ph-chat-circle"></i></button>
+                            </div>
+                        </div>
+                    `;
+                });
+            },
+
+            // --- PROFILE RENDER ---
+            openUserProfile: (username) => {
+                UI.currentProfileUser = username;
+                UI.renderUserProfile();
+                UI.switchView('profile');
+                UI.toggleSearch(false);
+            },
+
+            renderUserProfile: () => {
+                const username = UI.currentProfileUser;
+                const user = DB.getUsers().find(u => u.username === username);
+                if(!user) return;
+
+                // Header Info
+                document.getElementById('u-prof-name').innerText = user.username;
+                document.getElementById('u-prof-id').innerText = user.id;
+                document.getElementById('u-prof-avatar').innerText = user.username[0].toUpperCase();
+                
+                // Follow Button
+                const actionContainer = document.getElementById('u-prof-action');
+                const me = DB.getUsers().find(u => u.username === Auth.currentUser.username);
+                if(username !== Auth.currentUser.username) {
+                    const isFollowing = me.following.includes(username);
+                    actionContainer.innerHTML = `<button onclick="App.followUser('${username}', this)" class="${isFollowing ? 'bg-slate-700 text-slate-400' : 'bg-primary text-white'} font-bold px-6 py-2 rounded-full shadow-lg hover:shadow-xl transition">${isFollowing ? 'Following' : 'Follow'}</button>`;
+                } else {
+                    actionContainer.innerHTML = `<span class="px-4 py-2 bg-slate-800 rounded-full text-slate-400 text-sm font-bold">You</span>`;
+                }
+
+                // Render User's Posts
+                const postsDiv = document.getElementById('u-prof-content-posts');
+                postsDiv.innerHTML = '';
+                const userPosts = DB.getPosts().filter(p => p.author === username);
+                if(userPosts.length === 0) postsDiv.innerHTML = '<div class="text-slate-500">No posts yet.</div>';
+                userPosts.forEach(p => {
+                     postsDiv.innerHTML += `<div class="bg-slate-800/50 p-4 rounded-xl border border-slate-700/50"><p class="text-slate-200">${p.content}</p><div class="text-xs text-slate-500 mt-2">${new Date(p.timestamp).toLocaleDateString()}</div></div>`;
+                });
+
+                // Render User's Seameeds
+                const seameedDiv = document.getElementById('u-prof-content-seameed');
+                seameedDiv.innerHTML = '';
+                const userVids = DB.getSeameeds().filter(v => v.author === username);
+                if(userVids.length === 0) seameedDiv.innerHTML = '<div class="text-slate-500">No Seameeds yet.</div>';
+                userVids.forEach(v => {
+                    seameedDiv.innerHTML += `
+                        <div class="flex gap-4 items-center bg-slate-800/50 p-3 rounded-xl border border-slate-700/50">
+                            <div class="w-24 h-16 bg-black rounded overflow-hidden">
+                                <iframe width="100%" height="100%" src="https://www.youtube.com/embed/${v.ytId}" frameborder="0"></iframe>
+                            </div>
+                            <div class="text-sm font-bold text-white">Video uploaded on <br><span class="font-normal text-slate-500 text-xs">${new Date(v.timestamp).toLocaleDateString()}</span></div>
+                        </div>`;
+                });
+
+                // Reset Tabs
+                UI.switchProfileTab('posts');
+            },
+
+            switchProfileTab: (tab) => {
+                document.getElementById('u-prof-content-posts').classList.toggle('hidden', tab !== 'posts');
+                document.getElementById('u-prof-content-seameed').classList.toggle('hidden', tab !== 'seameed');
+                
+                const t1 = document.getElementById('tab-posts');
+                const t2 = document.getElementById('tab-seameed');
+                
+                if(tab === 'posts') {
+                    t1.className = "pb-3 text-white font-bold border-b-2 border-primary transition";
+                    t2.className = "pb-3 text-slate-500 font-bold border-b-2 border-transparent hover:text-white transition";
+                } else {
+                    t1.className = "pb-3 text-slate-500 font-bold border-b-2 border-transparent hover:text-white transition";
+                    t2.className = "pb-3 text-pink-500 font-bold border-b-2 border-pink-500 transition";
+                }
+            },
+
+            switchView: (viewName) => {
+                document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
+                document.getElementById(`view-${viewName}`).classList.remove('hidden');
+                const titles = { 'feed': 'Home Feed', 'seameed': 'Seameed', 'admin': 'Admin Control', 'messages': 'Private Messages', 'group': 'Group Chat', 'profile': 'User Profile' };
+                document.getElementById('page-title').innerText = titles[viewName] || 'The Network';
+            },
+
+            toggleSearch: (show) => {
+                const panel = document.getElementById('search-panel');
+                if(show) panel.classList.remove('-translate-y-full');
+                else panel.classList.add('-translate-y-full');
+            }
+        };
+
+        // --- INIT ---
+        DB.init();
+        Auth.checkSession();
+    </script>
+</body>
+</html>
